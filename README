@@ -1,0 +1,11 @@
+Collection of handy scripts for Linux systems.
+
+ruby/ (Ruby related scripts)
+  dump_gems
+    Produce a bash script to install all the currently installed gems
+    (eg. when you want to have the same environment on a new server)
+
+dev/  (Development related scripts)
+  rsls
+    Integrates SVN status information into normal 'ls'. Intended to be aliased
+    to replace ls in the shell.
