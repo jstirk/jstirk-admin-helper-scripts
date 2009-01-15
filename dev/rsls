@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+#
+# Script that you can alias as ls, and it will integrate with "svn st" to
+# include SVN status information in the directory listing.
+# Includes terminal colours for the different statuses.
+# Author: Jason Stirk <jstirk@oobleyboo.com>
+# Created: 29Sep2008 19:19 +1000
+
+# Personally, I add the following to my .bashrc so as that this is always used
+# alias ls='~/bin/rsls'
+
+cmd="ls --color=always #{ARGV.join(' ')}"
+lsinfo=`#{cmd}`
+files={}
+if File.exist?('.svn') then
+  `svn st`.split(/\r\n|\r|\n/).each do |line|
+    ms=line.strip.match(/^(.)[\s \+]+(.*)(\/.*)?$/i)
+    if ms[2] =~ /\// then
+      # Has a slash, so show a property on the directory
+      ma=ms[2].gsub(/([^\/]+)\/.*$/, '\1')
+      mt=ms[1]
+    else
+      ma=ms[2]
+      mt=ms[1]
+    end
+    case ms[1]
+      when /A/i
+        cc="\e[01;32m"
+      when /D/i, /!/i
+        cc="\e[01;31m"
+      when /M/i
+        cc="\e[01;36m"
+      when '?'
+        cc="\e[01;33m"
+    end
+    if ma != '.' then
+      files[ma] ||= ''
+      files[ma] << "#{cc}#{mt}"
+    end
+  end
+end
+reset="\e[00;00m"
+files.each do |f,v|
+  v=v.gsub(/([ADM\?\*].*)/, '(\1)')
+  lsinfo.gsub!(/(#{f})([^.])/, "\\1#{v}#{reset}\\2")
+end
+print lsinfo

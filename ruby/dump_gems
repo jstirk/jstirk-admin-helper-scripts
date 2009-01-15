@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+# Quick and dirty script to generate instructions to install gems to
+# a new system.
+# USAGE:
+#  Run this script on the source server. It will output a list of "gem install"
+#  commands that can then be run on the new server to install all of the same
+#  gems.
+# Author: Jason Stirk (http://griffin.oobleyboo.com)
+# Date: 15Jan2008
+
+#####
+# CONFIGURATION
+#####
+
+# The path to your 'gem' command
+GEM_CMD='/usr/bin/gem'
+
+# By default, I don't install any docs. Change this if you want
+OPTIONS="--no-ri --no-rdoc"
+
+###############################################################
+
+out=[]
+`#{GEM_CMD} list`.each_line do |line|
+  junk,gem,vers=line.match(/^([^\s]+)\s\(([^\)]+)\)/).to_a
+  if junk then
+    vers.split(',').each do |ver|
+      out << "gem install #{gem} --version #{ver.strip} #{OPTIONS}"
+    end
+  end
+end
+puts out.join("\n")
