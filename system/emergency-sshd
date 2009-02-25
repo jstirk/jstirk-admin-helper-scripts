@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+#
+# If there are no instances of sshd running, try to restart it. Failing that,
+# open a nc connection to a rescue host so as that we have remote shell access.
+# Project: http://github.com/jstirk/jstirk-admin-helper-scripts/
+# Author: Jason Stirk (http://griffin.oobleyboo.com)
+# Date: 26Feb2009
+
+# This script should be run by cron (as root) on your server. I usually only 
+# have it running when I'm messing around with sshd, but you could run it all
+# the time if you have a particularly flaky sshd.
+#
+# When you notice an outage, you need to shell into your rescue host and run:
+#
+# nc -l -p RESCUE_PORT_HERE
+# 
+# nc will then listen on that port, and eventually a connection will be
+# opened by this script. It will connect silently, so I usually issue 'ls' a
+# few times when I start nc so as that I can see when it finally connects.
+# You can then use this (very basic) shell to get sshd back up and running.
+
+#####
+# CONFIGURATION
+#####
+
+# The host to connect to if sshd restart fails
+RESCUE_HOST='your-server-here.example.com'
+# The port to connect to
+RESCUE_PORT=7777
+
+###############################################################
+sshds=`ps -Al | grep sshd | wc -l`
+if sshds.to_i < 1 then
+	puts "sshd appears to be dead - trying to restart it"
+	# Try to restart ssh
+	`/etc/init.d/sshd restart`
+
+  # Give sshd a chance to start before we open the emergency connection
+	sleep(10)
+
+	# If it still hasn't come up, use our emergency backchannel
+	sshds=`ps -Al | grep sshd | wc -l`
+	if sshds.to_i < 1 then
+		puts "sshd still appears dead - opening backchannel to #{RESCUE_HOST}:#{RESCUE_PORT}"
+		`nc -e /bin/bash #{RESCUE_HOST} #{RESCUE_PORT}`
+	end
+end

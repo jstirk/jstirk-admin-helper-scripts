@@ -9,3 +9,9 @@ dev/  (Development related scripts)
   rsls
     Integrates SVN status information into normal 'ls'. Intended to be aliased
     to replace ls in the shell.
+
+system/ (System/Server related scripts)
+  emergency-sshd
+    Intended to be run from cron to provide emergency sshd restart in case
+    you manage to kill it. Resorts to providing a crude shell to a "rescue"
+    server using nc if it can't get sshd to start again.
