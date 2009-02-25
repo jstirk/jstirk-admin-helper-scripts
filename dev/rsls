@@ -3,12 +3,14 @@
 # Script that you can alias as ls, and it will integrate with "svn st" to
 # include SVN status information in the directory listing.
 # Includes terminal colours for the different statuses.
-# Author: Jason Stirk <jstirk@oobleyboo.com>
-# Created: 29Sep2008 19:19 +1000
+# Project: http://github.com/jstirk/jstirk-admin-helper-scripts/
+# Author: Jason Stirk (http://griffin.oobleyboo.com)
+# Date: 29Sep2008
 
 # Personally, I add the following to my .bashrc so as that this is always used
 # alias ls='~/bin/rsls'
 
+###############################################################
 cmd="ls --color=always #{ARGV.join(' ')}"
 lsinfo=`#{cmd}`
 files={}

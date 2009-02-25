@@ -5,8 +5,9 @@
 #  Run this script on the source server. It will output a list of "gem install"
 #  commands that can then be run on the new server to install all of the same
 #  gems.
+# Project: http://github.com/jstirk/jstirk-admin-helper-scripts/
 # Author: Jason Stirk (http://griffin.oobleyboo.com)
-# Date: 15Jan2008
+# Date: 15Jan2009
 
 #####
 # CONFIGURATION
