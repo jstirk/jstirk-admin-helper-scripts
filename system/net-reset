@@ -1,0 +1,127 @@
+#!/usr/bin/env ruby
+#
+# Script to process different tasks to keep a gateway box running.
+# Project: http://github.com/jstirk/jstirk-admin-helper-scripts/
+# Author: Jason Stirk (http://griffin.oobleyboo.com)
+# Date: 22Mar2009
+
+# This script should be run by cron (as root) on your server. I usually only 
+# Different tasks can be run at different frequencies. In my case, I do :
+#   comms - every 3 minutes (enough to keep my net up)
+#   shutdown - every 5 minutes during times when I'm not likely to be using it
+#
+# NOTE: Things are set up for Gentoo's init system - if you're on another
+#       distro, you may find you need to tweak some of the commands a little.
+
+#####
+# CONFIGURATION
+#####
+
+# The AP that we check to see whether we're on the WLAN or not
+WLAN_AP_IP='10.1.1.1'
+
+# The external host that we check to see whether we're on the Net
+REMOTE_PING_HOST='www.google.com'
+
+# The hosts on the local network we check to see whether anyone is using
+# the network.
+LAN_HOSTS=%w{ griffin rachael rayray as-mob1 as-hnd1 }
+
+# Services that we restart when our wlan status changes
+WLAN_SERVICES=%w{ sshd dnsmasq squid }
+
+# Services that we restart when our net status changes
+NET_SERVICES=%w{ iptables squid ntp-client dnsmasq }
+
+# Log file to write to
+LOG_FILE='/tmp/net-reset.log'
+
+# Interfaces we're working on
+WLAN_IF='wlan1'
+NET_IF='ppp0'
+
+###############################################################
+TASKS=%w{ comms wlan ppp shutdown }
+
+def host_up(host)
+  perform "ping #{host} -i 1 -c 3 -w 8 -n"
+  $?.exitstatus == 0
+end 
+
+def perform(cmd)
+  if DEBUG then
+    print cmd
+  end
+  log(cmd)
+  `#{cmd} 2>/dev/null >/dev/null`
+end
+
+def log(msg)
+  File.open(LOG_FILE, 'a') do |f|
+    f << "#{msg}\n"
+  end
+end
+
+def comms
+  wlan
+  ppp
+end
+
+def ppp
+  if LAN_HOSTS.any? { |h| host_up(h) } then
+    if !host_up(REMOTE_PING_HOST) then
+      perform "/etc/init.d/net.#{WLAN_IF} restart"
+      sleep 10
+      NET_SERVICCES.each do |srv|
+        perform "/etc/init.d/#{srv} restart"
+      end
+    end
+  end
+end
+
+def wlan
+  if !host_up(WLAN_AP_IP) then
+    perform "/etc/init.d/net.#{WLAN_IF} restart"
+    6.times do
+      sleep 5
+      if host_up(WLAN_AP_IP) then
+        WLAN_SERVICES.each do |srv|
+          perform "/etc/init.d/#{srv} restart"
+        end
+        break
+      end
+    end
+  end
+end
+
+# NOTE: We only really want to call this during the wee small hours
+#       (eg. midnight to 6am) 
+def shutdown
+  # Shutdown depends on wlan being up
+  wlan
+
+  if LAN_HOSTS.any? { |h| host_up(h) } then
+    # See if there is any shutdown attempt and whether we need to kill it
+    perform "ps -Al | grep shutdown"
+    if $?.exitstatus == 0 then
+      # There is a shutdown process running, so kill it
+      perform "/sbin/shutdown -c"
+    end
+  else
+    # Everyone is shut down, so we may as well do so too.
+    # We give a 10 minute grace 
+    perform "/sbin/shutdown -h +10"
+  end
+end
+
+if TASKS.include? ARGV[0] then
+  if ARGV.include? "-d" then
+    DEBUG=true
+  else
+    DEBUG=false
+  end
+  log("#{Time.now.to_s}: #{ARGV[0]}")
+  eval("#{ARGV[0]}()")
+  log("DONE")
+end
+
