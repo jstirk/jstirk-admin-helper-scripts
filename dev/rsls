@@ -13,9 +13,23 @@
 ###############################################################
 cmd="ls --color=always #{ARGV.join(' ')}"
 lsinfo=`#{cmd}`
+
+# Strip out the args so as that we just have the path
+path=cmd.gsub(/ls| -[\-A-Z0-9\=]+( [A-Z0-9]+)?/i, '').strip
+if path == '' then
+  svn_path='.svn'
+else
+  # Otherwise, we will get "/.svn" which is wrong
+  svn_path=File.join(path, '.svn')
+end
+
 files={}
-if File.exist?('.svn') then
-  `svn st`.split(/\r\n|\r|\n/).each do |line|
+if File.exist?(svn_path) then
+  cmd='svn st'
+  # Only cd if it's in a different path to where we are now
+  cmd="cd #{path}; #{cmd}" unless path == ''
+
+  `#{cmd}`.split(/\r\n|\r|\n/).each do |line|
     ms=line.strip.match(/^\s*([^\s]+)[\s \+]+(.*)(\/.*)?$/i)
     if ms[2] =~ /\// then
       # Has a slash, so show a property on the directory
