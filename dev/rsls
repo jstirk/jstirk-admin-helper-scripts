@@ -16,7 +16,7 @@ lsinfo=`#{cmd}`
 files={}
 if File.exist?('.svn') then
   `svn st`.split(/\r\n|\r|\n/).each do |line|
-    ms=line.strip.match(/^(.)[\s \+]+(.*)(\/.*)?$/i)
+    ms=line.strip.match(/^\s*([^\s]+)[\s \+]+(.*)(\/.*)?$/i)
     if ms[2] =~ /\// then
       # Has a slash, so show a property on the directory
       ma=ms[2].gsub(/([^\/]+)\/.*$/, '\1')
@@ -28,7 +28,7 @@ if File.exist?('.svn') then
     case ms[1]
       when /A/i
         cc="\e[01;32m"
-      when /D/i, /!/i
+      when /D/i, /!/i, /C/i
         cc="\e[01;31m"
       when /M/i
         cc="\e[01;36m"
@@ -43,7 +43,7 @@ if File.exist?('.svn') then
 end
 reset="\e[00;00m"
 files.each do |f,v|
-  v=v.gsub(/([ADM\?\*].*)/, '(\1)')
+  v=v.gsub(/([ADMC!\?\*].*)/, '(\1)')
   lsinfo.gsub!(/(#{f})([^.])/, "\\1#{v}#{reset}\\2")
 end
 print lsinfo
