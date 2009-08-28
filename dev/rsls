@@ -58,6 +58,9 @@ end
 reset="\e[00;00m"
 files.each do |f,v|
   v=v.gsub(/([ADMC!\?\*].*)/, '(\1)')
-  lsinfo.gsub!(/(#{f})([^.])/, "\\1#{v}#{reset}\\2")
+  # \e is bash's escape character for doing stuff. So, we need to 
+  # handle it specially here so as that status isn't duped for
+  # other files with similar names (eg. .git and .gitignore)
+  lsinfo.gsub!(/(#{f})(\e[^\s]*)$/, "\\1#{v}#{reset}\\2")
 end
 print lsinfo
